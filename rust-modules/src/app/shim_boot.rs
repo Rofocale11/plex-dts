@@ -3,7 +3,6 @@
 //! Starts the Stremio-backed PMS shim once at app boot, keeps the handle alive for the
 //! process, and installs the prober adapter that plugs the app's own FFmpeg prober and
 //! device-codec table into the shim's "can this TV play this stream?" decision.
-#![allow(dead_code)] // wired into boot in the next change
 
 use std::ffi::CString;
 use std::sync::{Arc, OnceLock};
@@ -12,8 +11,6 @@ use std::time::Duration;
 struct ShimState {
     origin: CString,
     port: u16,
-    token: String,
-    backend: Arc<plx_pmsshim::AddonBackend>,
 }
 
 static SHIM: OnceLock<ShimState> = OnceLock::new();
@@ -41,12 +38,7 @@ pub fn start() -> Result<(), String> {
     handle.shim.probes.set_prober(Arc::new(probe_adapter));
 
     let origin = CString::new(handle.origin()).map_err(|_| "origin has NUL".to_string())?;
-    let _ = SHIM.set(ShimState {
-        origin,
-        port: handle.port,
-        token: handle.token.clone(),
-        backend,
-    });
+    let _ = SHIM.set(ShimState { origin, port: handle.port });
     Ok(())
 }
 
@@ -59,13 +51,7 @@ pub fn port() -> u16 {
     SHIM.get().map_or(0, |s| s.port)
 }
 
-pub fn token() -> Option<&'static str> {
-    SHIM.get().map(|s| s.token.as_str())
-}
 
-pub fn backend() -> Option<Arc<plx_pmsshim::AddonBackend>> {
-    SHIM.get().map(|s| s.backend.clone())
-}
 
 /// The app's prober. Opens the URL with the bundled libavformat, reports the real shape,
 /// and marks each track with the TV's own decodability verdict. That verdict includes the
