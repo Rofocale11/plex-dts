@@ -29,12 +29,11 @@ pub fn start() -> Result<(), String> {
         torrent_server: None,
         stream_deadline: Duration::from_secs(60),
         stream_grace: Duration::from_millis(2500),
-        token: "plxnative-shim".into(),
+        token: "plexdts-local".into(),
     };
 
-    let handle = plx_pmsshim::start(backend.clone(), cfg, 0)
-        .map_err(|e| format!("bind 127.0.0.1:0: {e}"))?;
-
+    let handle = plx_pmsshim::start(backend.clone(), cfg, 32420)
+        .map_err(|e| format!("bind 127.0.0.1:32420: {e}"))?;
     // Point every plex.tv account call (pins, discovery, home users) at the shim.
     // `plx_plex::plex::account::plex_tv()` reads this file on first use and caches it,
     // so the write must happen before boot() drives the login flow. A failure here
