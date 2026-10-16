@@ -34,16 +34,14 @@ pub fn start() -> Result<(), String> {
 
     let handle = plx_pmsshim::start(backend.clone(), cfg, 32420)
         .map_err(|e| format!("bind 127.0.0.1:32420: {e}"))?;
-    // Point every plex.tv account call (pins, discovery, home users) at the shim.
-    // `plx_plex::plex::account::plex_tv()` reads this file on first use and caches it,
-    // so the write must happen before boot() drives the login flow. A failure here
-    // leaves the account API on the real plex.tv — logged, not fatal.
-    let trigger = "/tmp/plxnative-plextv";
-    if let Err(e) = std::fs::write(trigger, handle.origin()) {
-        plx_base::eventlog::log(&format!(
-            "shim: could not write {trigger} ({e}) — account calls stay on plex.tv"
-        ));
-    }
+    // Register the shim as the app's local server. `plex_tv()` checks this FIRST,
+    // so account calls (pins, discovery, home users) go to the shim regardless of
+    // when the first `plex_tv()` call happens. Must run before boot().
+    plx_base::local_server::set(
+        handle.origin(),
+        handle.token.clone(),
+        plx_pmsshim::MACHINE_ID.to_string(),
+    );
 
     handle.shim.probes.set_prober(Arc::new(probe_adapter));
 
