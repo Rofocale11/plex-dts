@@ -1690,6 +1690,11 @@ use pcm::PcmLane;
 mod enc;
 pub use enc::{declare as declare_enc, EncSpec};
 use enc::EncLane;
+
+// The third-party stream prober (NuvioNative import): opens a URL with the bundled
+// libavformat and reports the real container/codecs/tracks for the PMS shim.
+#[path = "ff_probe.rs"]
+pub mod probe;
 use subs::{SubKind, SubTracks};
 #[cfg(test)]
 use subs::{decode_bitmap_cue, open_sub_decoder, sub_kind};

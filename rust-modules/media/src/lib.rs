@@ -22,6 +22,3 @@ pub mod ff; // THE demuxer -- the FFmpeg 9.0 this app BUNDLES and pins (majors 6
 pub mod hls; // strict parser/auth/timeline for the measured one-variant PMS HLS shape
 pub mod player; // buffer-feed video engine (was playback.c) -- step 5
 pub mod route; // play_movie route selection (direct-play vs transcode) -- step 3
-pub mod ff_probe;
-pub mod local_server;
-pub mod nuvio;

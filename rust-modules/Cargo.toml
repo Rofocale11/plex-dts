@@ -260,6 +260,11 @@ serde_json = { version = "1", default-features = false, features = ["alloc", "st
 # derive(Deserialize) for the typed plex API response models (plex/src/plex/models.rs)
 serde = { version = "1", default-features = false, features = ["derive", "alloc", "rc"] }
 
+# The Stremio addon client (NuvioNative import).
+plx_stremio = { path = "stremio" }
+# The in-process PMS-dialect shim (NuvioNative import).
+plx_pmsshim = { path = "pmsshim" }
+
 # The release profile (the ARM staticlib and storage helper of CI, `RELEASE=1`, `SYMBOLS=1` and
 # `FLAVOR=stable|nightly` builds, `make sim-linux` and `make macapp`;
 # the host dev/test profile is untouched). `lto = "fat"` and `codegen-units = 1` are here because of
