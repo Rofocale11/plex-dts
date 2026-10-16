@@ -528,6 +528,7 @@ pub fn synthetic_home_initial(seed: u32, port: u16, settings: Option<String>)
 }
 
 fn enter_application(pms_host: *const c_char, pms_port: c_int) -> Result<App,c_int> {
+    let _ = (pms_host, pms_port);  // superseded by the shim; kept for the C ABI
     // What `plx_plex` reports as `X-Plex-Version` is this build's `PLX_VERSION`, which a
     // `cargo:rustc-env` makes visible to this crate only; before anything can build a header.
     plx_plex::plex::identity::set_version(env!("PLX_VERSION"));
@@ -563,7 +564,12 @@ fn enter_application(pms_host: *const c_char, pms_port: c_int) -> Result<App,c_i
     // Diagnostics probes `app_dir()` on its worker, so starting it earlier races that preamble.
     plx_platform::storage::diagnostics::start(env!("PLX_VERSION"));
     let main_thread = unsafe { plx_base::task::MainThread::assume() };
-    let mut app = unsafe { boot(pms_host,pms_port,main_thread,preflight) }?;
+    // FORK: start the Stremio-backed PMS shim and point the app at it. Real Plex servers
+    // are added by the user through the UI later; the shim is the boot target.
+    crate::app::shim_boot::start().expect("pmsshim start");
+    let shim_host = crate::app::shim_boot::origin_cstr();
+    let shim_port = crate::app::shim_boot::port() as c_int;
+    let mut app = unsafe { boot(shim_host, shim_port, main_thread, preflight) }?;
     if telemetry_guard.is_some() { app.telemetry_guard = telemetry_guard; }
     Ok(app)
 }
