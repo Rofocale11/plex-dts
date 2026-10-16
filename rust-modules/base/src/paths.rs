@@ -57,14 +57,14 @@ pub const ENV_STEERABLE: bool = cfg!(feature = "hostsim");
 ///
 /// It is a FALLBACK and a comparison value — never the answer on its own. See [`app_id`]: which
 /// app this process is depends on where it was installed, not on what it was compiled with.
-pub const STABLE_APP_ID: &str = "com.beb.plxnative";
+pub const STABLE_APP_ID: &str = "com.testing.nuvio";
 
 /// The Developer Mode install dir. Only a last-resort fallback now — it is what the app used to
 /// hardcode, so it keeps the historical behaviour if `/proc` is somehow unreadable.
-const LEGACY_APP_DIR: &str = "/media/developer/apps/usr/palm/applications/com.beb.plxnative";
+const LEGACY_APP_DIR: &str = "/media/developer/apps/usr/palm/applications/com.testing.nuvio";
 
-/// **Which install this process is** — `com.beb.plxnative` for the app users get, or
-/// `com.beb.plxnative.<flavour>` for a developer build sitting beside it on the same television.
+/// **Which install this process is** — `com.testing.nuvio` for the app users get, or
+/// `com.testing.nuvio.<flavour>` for a developer build sitting beside it on the same television.
 ///
 /// Read from the INSTALL DIRECTORY, not compiled in, and that is the whole design.
 ///
@@ -124,7 +124,7 @@ fn installed_app_id(exe: &Path) -> Option<String> {
 }
 
 /// The flavour suffix of [`app_id`] — `None` for the app users get, `Some("debug")` for
-/// `com.beb.plxnative.debug`.
+/// `com.testing.nuvio.debug`.
 ///
 /// One definition, so no caller has to know how a flavour is spelled. Everything that must differ
 /// between two installs on one television — the runtime root, the session file, the plex.tv device
@@ -814,21 +814,21 @@ mod tests {
     #[test]
     fn the_app_id_is_the_install_directory_and_only_a_real_one() {
         use std::path::Path;
-        let dev = "/media/developer/apps/usr/palm/applications/com.beb.plxnative.debug/plxnative";
-        let hbc = "/media/cryptofs/apps/usr/palm/applications/com.beb.plxnative/plxnative";
+        let dev = "/media/developer/apps/usr/palm/applications/com.testing.nuvio.debug/plxnative";
+        let hbc = "/media/cryptofs/apps/usr/palm/applications/com.testing.nuvio/plxnative";
         let nightly =
-            "/media/developer/apps/usr/palm/applications/com.beb.plxnative.nightly/plxnative";
+            "/media/developer/apps/usr/palm/applications/com.testing.nuvio.nightly/plxnative";
         assert_eq!(
             super::installed_app_id(Path::new(dev)).as_deref(),
-            Some("com.beb.plxnative.debug")
+            Some("com.testing.nuvio.debug")
         );
         assert_eq!(
             super::installed_app_id(Path::new(hbc)).as_deref(),
-            Some("com.beb.plxnative")
+            Some("com.testing.nuvio")
         );
         assert_eq!(
             super::installed_app_id(Path::new(nightly)).as_deref(),
-            Some("com.beb.plxnative.nightly")
+            Some("com.testing.nuvio.nightly")
         );
         // A host build: the parent is `debug`, whose parent is `target-sim` — not `applications`.
         // Without this arm the simulator would mint an app called `debug`, take `/tmp/debug` as its
@@ -859,13 +859,13 @@ mod tests {
             None
         );
         assert_eq!(
-            "com.beb.plxnative.debug"
+            "com.testing.nuvio.debug"
                 .strip_prefix(super::STABLE_APP_ID)
                 .and_then(|r| r.strip_prefix('.')),
             Some("debug")
         );
         assert_eq!(
-            "com.beb.plxnative.nightly"
+            "com.testing.nuvio.nightly"
                 .strip_prefix(super::STABLE_APP_ID)
                 .and_then(|r| r.strip_prefix('.')),
             Some("nightly")
@@ -890,11 +890,11 @@ mod tests {
             return; // a host build answers from the environment first; this is the television rule
         }
         let stable = super::resolve_runtime_dir(None, None, super::STABLE_APP_ID);
-        let debug = super::resolve_runtime_dir(None, None, "com.beb.plxnative.debug");
-        let nightly = super::resolve_runtime_dir(None, None, "com.beb.plxnative.nightly");
+        let debug = super::resolve_runtime_dir(None, None, "com.testing.nuvio.debug");
+        let nightly = super::resolve_runtime_dir(None, None, "com.testing.nuvio.nightly");
         assert_eq!(stable, std::path::Path::new("/tmp"));
-        assert_eq!(debug, std::path::Path::new("/tmp/com.beb.plxnative.debug"));
-        assert_eq!(nightly, std::path::Path::new("/tmp/com.beb.plxnative.nightly"));
+        assert_eq!(debug, std::path::Path::new("/tmp/com.testing.nuvio.debug"));
+        assert_eq!(nightly, std::path::Path::new("/tmp/com.testing.nuvio.nightly"));
         assert_ne!(
             stable.join("plxnative-events.log"),
             debug.join("plxnative-events.log")
@@ -1022,7 +1022,7 @@ mod tests {
             ]
         };
         let a = named(super::STABLE_APP_ID);
-        let b = named("com.beb.plxnative.debug");
+        let b = named("com.testing.nuvio.debug");
         assert!(
             a.iter().all(|p| !b.contains(p)),
             "{a:?} and {b:?} share a session file"
