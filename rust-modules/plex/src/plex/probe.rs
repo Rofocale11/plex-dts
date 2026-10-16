@@ -427,6 +427,14 @@ fn is_numeric_address(a: &str) -> bool {
 /// verified-but-ineligible answer is still evidence the server is alive on that address; see the
 /// field's own doc and `auth.rs`'s race semantics for what that answer is allowed to mean.
 pub fn candidates(res: &Resource, policy: CredentialPolicy) -> Vec<Candidate> {
+    candidates_with_local(res, policy, plx_base::local_server::get())
+}
+
+fn candidates_with_local(
+    res: &Resource,
+    policy: CredentialPolicy,
+    local: Option<&plx_base::local_server::LocalServer>,
+) -> Vec<Candidate> {
     let mut out: Vec<Candidate> = Vec::new();
     for c in res.connections.iter().filter(|c| is_usable(c)) {
         let location = tier(c);
@@ -438,6 +446,15 @@ pub fn candidates(res: &Resource, policy: CredentialPolicy) -> Vec<Candidate> {
             if out.iter().any(|e| e.url == url) {
                 return; // plex.tv can advertise the same origin twice; a probe slot is not free
             }
+            // Only the server started by this process may bypass release's remote-HTTP gate.
+            // A loopback address by itself is not proof: bind its origin, token and identity.
+            let registered_local = local.is_some_and(|local| {
+                res.owned
+                    && local.origin == url
+                    && local.token == res.access_token
+                    && local.machine_id == res.client_identifier
+                    && Origin::parse(&url).is_some_and(|origin| super::origin::is_loopback(&origin))
+            });
             out.push(Candidate {
                 url,
                 scheme,
@@ -446,7 +463,8 @@ pub fn candidates(res: &Resource, policy: CredentialPolicy) -> Vec<Candidate> {
                 port: c.port,
                 ipv6,
                 credential_eligible: scheme == Scheme::Https
-                    || policy == CredentialPolicy::AllowPlaintext,
+                    || policy == CredentialPolicy::AllowPlaintext
+                    || registered_local,
             });
         };
         let unmatched_shared_lan = c.local && !res.owned && !res.public_address_matches;
@@ -483,7 +501,6 @@ pub fn candidates(res: &Resource, policy: CredentialPolicy) -> Vec<Candidate> {
     });
     out
 }
-
 /// Which HTTPS route to a server a candidate is — the rows of [`HttpsRoutes`]. Read off the
 /// candidate's own URL and tier, never off `address`: the `plex.direct` NAME is what makes a route
 /// one plex.tv minted a certificate for, and the tier is plex.tv's own `local`/`relay` flags.
@@ -927,7 +944,7 @@ impl AddressScope {
     /// network. Loopback is excluded — nothing plex.tv advertises for a household server is on
     /// this television itself — and so is every name, which a resolver could answer with anything.
     pub fn is_private_network(self) -> bool {
-        matches!(self, Self::Private | Self::LinkLocal | Self::UniqueLocal | Self::Loopback)
+        matches!(self, Self::Private | Self::LinkLocal | Self::UniqueLocal)
     }
 }
 
@@ -1693,10 +1710,10 @@ mod tests {
         assert_eq!(flip(&|e| e.https_required = true), E::HttpsRequired);
         assert_eq!(flip(&|e| e.plaintext_local = false), E::NotLocal, "remote or relay plaintext");
         assert_eq!(flip(&|e| e.public_address_matches = false), E::NotSameNetwork);
-        for scope in [AddressScope::Name, AddressScope::Public] {
+        for scope in [AddressScope::Name, AddressScope::Public, AddressScope::Loopback] {
             assert_eq!(flip(&|e| e.plaintext_scope = scope), E::NotPrivateAddress, "{scope:?}");
         }
-        for scope in [AddressScope::Private, AddressScope::LinkLocal, AddressScope::UniqueLocal, AddressScope::Loopback] {
+        for scope in [AddressScope::Private, AddressScope::LinkLocal, AddressScope::UniqueLocal] {
             assert_eq!(flip(&|e| e.plaintext_scope = scope), E::Eligible, "{scope:?}");
         }
         assert_eq!(flip(&|e| e.identity_verified = false), E::IdentityUnverified);

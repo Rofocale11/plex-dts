@@ -34,6 +34,7 @@ pub fn start() -> Result<(), String> {
 
     let handle = plx_pmsshim::start(backend.clone(), cfg, 32420)
         .map_err(|e| format!("bind 127.0.0.1:32420: {e}"))?;
+
     // Register the shim as the app's local server. `plex_tv()` checks this FIRST,
     // so account calls (pins, discovery, home users) go to the shim regardless of
     // when the first `plex_tv()` call happens. Must run before boot().
