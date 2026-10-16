@@ -927,7 +927,7 @@ impl AddressScope {
     /// network. Loopback is excluded — nothing plex.tv advertises for a household server is on
     /// this television itself — and so is every name, which a resolver could answer with anything.
     pub fn is_private_network(self) -> bool {
-        matches!(self, Self::Private | Self::LinkLocal | Self::UniqueLocal)
+        matches!(self, Self::Private | Self::LinkLocal | Self::UniqueLocal | Self::Loopback)
     }
 }
 
@@ -1693,10 +1693,10 @@ mod tests {
         assert_eq!(flip(&|e| e.https_required = true), E::HttpsRequired);
         assert_eq!(flip(&|e| e.plaintext_local = false), E::NotLocal, "remote or relay plaintext");
         assert_eq!(flip(&|e| e.public_address_matches = false), E::NotSameNetwork);
-        for scope in [AddressScope::Name, AddressScope::Public, AddressScope::Loopback] {
+        for scope in [AddressScope::Name, AddressScope::Public] {
             assert_eq!(flip(&|e| e.plaintext_scope = scope), E::NotPrivateAddress, "{scope:?}");
         }
-        for scope in [AddressScope::Private, AddressScope::LinkLocal, AddressScope::UniqueLocal] {
+        for scope in [AddressScope::Private, AddressScope::LinkLocal, AddressScope::UniqueLocal, AddressScope::Loopback] {
             assert_eq!(flip(&|e| e.plaintext_scope = scope), E::Eligible, "{scope:?}");
         }
         assert_eq!(flip(&|e| e.identity_verified = false), E::IdentityUnverified);
