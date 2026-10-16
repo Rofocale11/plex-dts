@@ -115,6 +115,7 @@ pub(crate) mod boot;
 pub(crate) mod bootstrap;
 #[cfg(test)]
 pub(crate) use bootstrap::HomeIo;
+pub mod shim_boot;
 /// **"Stats for nerds"** — the diagnostics read-out (phase 10, was `ui/stats.rs`). Here rather
 /// than in `ui/` because it is written from `player::Diag`, `route`, `plex::identity`, `tv`
 /// and `devcaps` — application facts — and because its state is now an `App` field.
