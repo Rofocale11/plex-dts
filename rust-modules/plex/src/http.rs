@@ -1058,7 +1058,8 @@ mod tests {
 
     #[test]
     fn store_policy_refuses_credentials_over_plaintext_http() {
-        let http = Origin::http("127.0.0.1", 32400);
+        // A LAN-ish address: literal loopback is now exempt (`origin::is_loopback`).
+        let http = Origin::http("192.0.2.1", 32400);
         let https = Origin::parse("https://127-0-0-1.hash.plex.direct:32400").unwrap();
         let token_path = "/identity?X-Plex-Token=secret";
 

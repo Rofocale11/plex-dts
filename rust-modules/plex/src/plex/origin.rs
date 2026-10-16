@@ -77,10 +77,19 @@ impl CredentialPolicy {
     }
 
     /// May a credential ride `origin` under this policy? TLS always; plaintext only under
-    /// [`CredentialPolicy::AllowPlaintext`].
+    /// [`CredentialPolicy::AllowPlaintext`], or on a literal loopback address (the in-process
+    /// PMS shim never leaves the device).
     pub fn may_carry_credential(self, origin: &Origin) -> bool {
-        origin.is_tls() || self == CredentialPolicy::AllowPlaintext
+        origin.is_tls() || self == CredentialPolicy::AllowPlaintext || is_loopback(origin)
     }
+}
+
+/// NuvioNative: the in-process PMS shim answers on loopback, which never leaves the device, so a
+/// credential on a plaintext loopback origin is no exposure. Only literal loopback addresses —
+/// never a NAME (`localhost` can be re-pointed by a resolver) and never a LAN address.
+pub fn is_loopback(origin: &Origin) -> bool {
+    let h = origin.host();
+    h == "::1" || h.parse::<std::net::Ipv4Addr>().is_ok_and(|a| a.is_loopback())
 }
 
 #[cfg(test)]
