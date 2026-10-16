@@ -31,3 +31,4 @@ pub mod forkknobs; // FORK (RichiL10): playback knobs read from /media/developer
 pub mod testlock; // one lock for every test that touches a process-global
 #[cfg(any(test, feature = "test-support"))]
 pub mod testnet; // the one accept for a loopback test server whose listener is nonblocking
+pub mod local_server;

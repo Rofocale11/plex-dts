@@ -236,3 +236,4 @@ pub use timeline::{queue_index_of, QueueRow};
 pub use transcoder::{
     DP_AUDIO_CODECS, DP_SUBTITLE_CODECS, LinkPolicy, is_dp_audio, is_dp_audio_track, is_dp_audio_track_at, is_dp_subtitle, link_policy,
 };
+// pub mod nuvio; // Nuvio account login lives in plx_stremio::nuvio; this file needs RatingSource ported first
