@@ -25,7 +25,7 @@ pub fn start() -> Result<(), String> {
     let backend = Arc::new(plx_pmsshim::AddonBackend::new(set));
 
     let cfg = plx_pmsshim::Config {
-        data_dir: None, // in-memory for first bring-up; move to a DB8-backed path later
+        data_dir: Some(plx_base::paths::runtime_dir().to_path_buf()),
         torrent_server: None,
         stream_deadline: Duration::from_secs(60),
         stream_grace: Duration::from_millis(2500),
