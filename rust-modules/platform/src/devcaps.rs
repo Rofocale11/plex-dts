@@ -285,7 +285,7 @@ impl Caps {
     /// [`Caps::audio`] (TrueHD and MLP, which no television table lists). Empty when it is off.
     pub fn enc_lane_profile_codecs(&self, encode: bool) -> &'static [&'static str] {
         if encode && self.enc_sink_ok() {
-            &["truehd", "mlp", "dts"]
+            &["truehd", "mlp",]
         } else {
             &[]
         }
