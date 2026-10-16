@@ -46,6 +46,15 @@ pub fn start() -> Result<(), String> {
 
     handle.shim.probes.set_prober(Arc::new(probe_adapter));
 
+    // Wire the addon sink: when the user picks a Nuvio profile (or on boot),
+    // the shim fetches that profile's addons and swaps them into the running
+    // backend. Without this, the shim stays on `AddonSet::defaults()` — Cinemeta
+    // and OpenSubtitles only, no stream providers, so every play is refused.
+    let backend_for_sink = backend.clone();
+    handle.shim.account.set_sink(Arc::new(move |set| {
+        backend_for_sink.replace(set);
+    }));
+
     let origin = CString::new(handle.origin()).map_err(|_| "origin has NUL".to_string())?;
     let _ = SHIM.set(ShimState { origin, port: handle.port });
     Ok(())
