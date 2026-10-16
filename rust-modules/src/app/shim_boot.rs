@@ -25,7 +25,7 @@ pub fn start() -> Result<(), String> {
     let backend = Arc::new(plx_pmsshim::AddonBackend::new(set));
 
     let cfg = plx_pmsshim::Config {
-        data_dir: None,          // in-memory for first bring-up; move to a DB8-backed path later
+        data_dir: None, // in-memory for first bring-up; move to a DB8-backed path later
         torrent_server: None,
         stream_deadline: Duration::from_secs(60),
         stream_grace: Duration::from_millis(2500),
@@ -34,6 +34,17 @@ pub fn start() -> Result<(), String> {
 
     let handle = plx_pmsshim::start(backend.clone(), cfg, 0)
         .map_err(|e| format!("bind 127.0.0.1:0: {e}"))?;
+
+    // Point every plex.tv account call (pins, discovery, home users) at the shim.
+    // `plx_plex::plex::account::plex_tv()` reads this file on first use and caches it,
+    // so the write must happen before boot() drives the login flow. A failure here
+    // leaves the account API on the real plex.tv — logged, not fatal.
+    let trigger = "/tmp/plxnative-plextv";
+    if let Err(e) = std::fs::write(trigger, handle.origin()) {
+        plx_base::eventlog::log(&format!(
+            "shim: could not write {trigger} ({e}) — account calls stay on plex.tv"
+        ));
+    }
 
     handle.shim.probes.set_prober(Arc::new(probe_adapter));
 
@@ -51,8 +62,6 @@ pub fn port() -> u16 {
     SHIM.get().map_or(0, |s| s.port)
 }
 
-
-
 /// The app's prober. Opens the URL with the bundled libavformat, reports the real shape,
 /// and marks each track with the TV's own decodability verdict. That verdict includes the
 /// in-app AC3 encode lane: a DTS 5.1 48 kHz track is `decodable` (the `EncLane` takes it),
@@ -64,7 +73,7 @@ fn probe_adapter(
     let p = plx_media::ff::probe::probe_url(url, deadline)?;
     let caps = plx_platform::devcaps::caps();
     let container = p.container().to_string();
-    
+
     let video_decodable = p
         .video
         .as_ref()
